@@ -77,12 +77,11 @@ namespace osn
 			static constexpr index_pair swap_sequence[] =
 			{
 				{ 0, 1 }, { 2, 3 },
-				{ 1, 3 },
-				{ 0, 2 },
+				{ 1, 3 }, { 0, 2 },
 				{ 1, 2 }
 			};
 
-			static constexpr size_t depth = 4;
+			static constexpr size_t depth = 3;
 		};
 
 		template <>

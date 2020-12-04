@@ -1,5 +1,6 @@
 #pragma once
 #include <iterator>
+#include <cassert>
 
 
 
@@ -105,14 +106,13 @@ namespace osn
 			static constexpr index_pair swap_sequence[] =
 			{
 				{ 0, 1 }, { 2, 3 }, { 4, 5 },
-				{ 0, 2 }, { 3, 5 },
-				{ 2, 4 },
+				{ 0, 2 }, { 3, 5 }, { 1, 4 },
 				{ 0, 1 }, { 2, 3 }, { 4, 5 },
 				{ 1, 2 }, { 3, 4 },
 				{ 2, 3 }
 			};
 
-			static constexpr size_t depth = 6;
+			static constexpr size_t depth = 5;
 		};
 
 		template <>
@@ -147,6 +147,8 @@ namespace osn
 			static constexpr size_t depth = 6;
 		};
 	}
+
+
 
 	constexpr size_t max_supported_array_size = 8;
 
@@ -209,6 +211,7 @@ namespace osn
 			sort<8>(begin);
 			break;
 		default:
+			assert(false);
 			break;
 		}
 	}

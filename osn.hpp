@@ -30,6 +30,9 @@ namespace osn
 {
 	namespace detail
 	{
+		template <typename Iterator>
+		constexpr bool is_random_access_iterator = std::is_same<std::iterator_traits<Iterator>::iterator_category, std::random_access_iterator_tag>::value;
+
 		struct alignas(sizeof(size_t) * 2) index_pair
 		{
 			size_t left;
@@ -188,7 +191,13 @@ namespace osn
 	template <size_t N, typename RandomAccessIterator>
 	constexpr void sort(RandomAccessIterator begin)
 	{
-		static_assert(N <= max_supported_array_size);
+		static_assert(
+			detail::is_random_access_iterator<RandomAccessIterator>,
+			"OSN: Only random access iterators are supported.");
+
+		static_assert(
+			N <= max_supported_array_size,
+			"OSN: Invalid array size, only sizes 0 to 8 (inclusive) are supported.");
 
 		if constexpr (N > 1)
 		{
@@ -205,6 +214,10 @@ namespace osn
 	template <typename RandomAccessIterator>
 	constexpr void sort(RandomAccessIterator begin, RandomAccessIterator end)
 	{
+		static_assert(
+			detail::is_random_access_iterator<RandomAccessIterator>,
+			"OSN: Only random access iterators are supported.");
+
 		const auto size = std::distance(begin, end);
 		if (size > 1)
 		{

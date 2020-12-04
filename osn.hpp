@@ -22,7 +22,7 @@ namespace osn
 		template <typename Iterator>
 		constexpr void compare_swap(Iterator left, Iterator right)
 		{
-			using T = typename std::iterator_traits<I>::value_type;
+			using T = typename std::iterator_traits<Iterator>::value_type;
 
 			constexpr bool is_fundamental = std::is_fundamental<T>::value;
 			constexpr bool cmov_capable = (is_fundamental || std::is_trivial<T>::value) && (sizeof(T) <= sizeof(size_t));
@@ -132,22 +132,6 @@ namespace osn
 		};
 
 		template <>
-		struct network_info<7>
-		{
-			static constexpr index_pair swap_sequence[] =
-			{
-				{ 1, 2 }, { 3, 4 }, { 5, 6 },
-				{ 0, 2 }, { 3, 5 }, { 4, 6 },
-				{ 2, 6 }, { 1, 5 }, { 0, 4 },
-				{ 2, 5 }, { 0, 3 },
-				{ 2, 4 }, { 1, 3 },
-				{ 0, 1 }, { 2, 3 }, { 4, 5 }
-			};
-
-			static constexpr size_t depth = 6;
-		};
-
-		template <>
 		struct network_info<8>
 		{
 			static constexpr index_pair swap_sequence[] =
@@ -181,7 +165,7 @@ namespace osn
 	template <size_t N, typename RandomAccessIterator>
 	constexpr void sort(RandomAccessIterator begin)
 	{
-		static_assert(N <= max_supported_size);
+		static_assert(N <= max_supported_array_size);
 
 		if constexpr (N > 1)
 		{

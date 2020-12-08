@@ -211,59 +211,63 @@ namespace osn
 		}
 	}
 
-	template <typename RandomAccessIterator>
+	template <bool UseJumpTable = false, typename RandomAccessIterator>
 	constexpr void sort(RandomAccessIterator begin, RandomAccessIterator end)
 	{
 		static_assert(
 			detail::is_random_access_iterator<RandomAccessIterator>,
 			"OSN: Only random access iterators are supported.");
 
-		auto size = std::distance(begin, end);
+		const auto size = std::distance(begin, end);
 		if (size < 2)
 			return;
 
-#ifdef OSN_USE_JUMP_TABLE
-		size -= 2;
-		using function_pointer_type = void(*)(RandomAccessIterator);
-		constexpr function_pointer_type jmp[] =
+		if constexpr (!UseJumpTable)
 		{
-			sort<2>,
-			sort<3>,
-			sort<4>,
-			sort<5>,
-			sort<6>,
-			sort<7>,
-			sort<8>
-		};
-		return jmp[size](begin);
-#else
-		switch (size)
-		{
-		case 2:
-			sort<2>(begin);
-			break;
-		case 3:
-			sort<3>(begin);
-			break;
-		case 4:
-			sort<4>(begin);
-			break;
-		case 5:
-			sort<5>(begin);
-			break;
-		case 6:
-			sort<6>(begin);
-			break;
-		case 7:
-			sort<7>(begin);
-			break;
-		case 8:
-			sort<8>(begin);
-			break;
-		default:
-			assert(false);
-			break;
+			switch (size)
+			{
+			case 2:
+				sort<2>(begin);
+				break;
+			case 3:
+				sort<3>(begin);
+				break;
+			case 4:
+				sort<4>(begin);
+				break;
+			case 5:
+				sort<5>(begin);
+				break;
+			case 6:
+				sort<6>(begin);
+				break;
+			case 7:
+				sort<7>(begin);
+				break;
+			case 8:
+				sort<8>(begin);
+				break;
+			default:
+				assert(false);
+				break;
+			}
 		}
-#endif
+		else
+		{
+			using function_pointer_type = void(*)(RandomAccessIterator);
+
+			constexpr function_pointer_type jmp[] =
+			{
+				sort<2>,
+				sort<3>,
+				sort<4>,
+				sort<5>,
+				sort<6>,
+				sort<7>,
+				sort<8>
+			};
+
+			return jmp[size - 2](begin);
+		}
 	}
 }

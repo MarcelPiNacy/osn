@@ -24,6 +24,7 @@
 
 #pragma once
 #include <iterator>
+#include <utility>
 #include <cassert>
 
 namespace osn
@@ -33,7 +34,7 @@ namespace osn
 		template <typename Iterator>
 		constexpr bool is_random_access_iterator = std::is_same<std::iterator_traits<Iterator>::iterator_category, std::random_access_iterator_tag>::value;
 
-		struct alignas(sizeof(size_t) * 2) index_pair
+		struct index_pair
 		{
 			size_t left;
 			size_t right;
@@ -50,8 +51,7 @@ namespace osn
 		{
 			using T = typename std::iterator_traits<Iterator>::value_type;
 
-			constexpr bool is_fundamental = std::is_fundamental<T>::value;
-			constexpr bool cmov_capable = (is_fundamental || std::is_trivial<T>::value) && (sizeof(T) <= sizeof(size_t));
+			constexpr bool cmov_capable = (std::is_fundamental<T>::value || std::is_trivial<T>::value) && (sizeof(T) <= sizeof(size_t));
 
 			const bool cmp = (*right) < (*left);
 			if constexpr (cmov_capable)
@@ -75,7 +75,7 @@ namespace osn
 		template <>
 		struct network_info<2>
 		{
-			static constexpr index_pair swap_sequence[] =
+			static constexpr index_pair comparator_list[] =
 			{
 				{ 0, 1 }
 			};
@@ -86,7 +86,7 @@ namespace osn
 		template <>
 		struct network_info<3>
 		{
-			static constexpr index_pair swap_sequence[] =
+			static constexpr index_pair comparator_list[] =
 			{
 				{ 1, 2 },
 				{ 0, 1 },
@@ -99,7 +99,7 @@ namespace osn
 		template <>
 		struct network_info<4>
 		{
-			static constexpr index_pair swap_sequence[] =
+			static constexpr index_pair comparator_list[] =
 			{
 				{ 0, 1 }, { 2, 3 },
 				{ 1, 3 }, { 0, 2 },
@@ -112,7 +112,7 @@ namespace osn
 		template <>
 		struct network_info<5>
 		{
-			static constexpr index_pair swap_sequence[] =
+			static constexpr index_pair comparator_list[] =
 			{
 				{ 1, 2 }, { 3, 4 },
 				{ 1, 3 }, { 0, 2 },
@@ -127,7 +127,7 @@ namespace osn
 		template <>
 		struct network_info<6>
 		{
-			static constexpr index_pair swap_sequence[] =
+			static constexpr index_pair comparator_list[] =
 			{
 				{ 0, 5 }, { 1, 3 }, { 2, 4 },
 				{ 1, 2 }, { 3, 4 },
@@ -142,7 +142,7 @@ namespace osn
 		template <>
 		struct network_info<7>
 		{
-			static constexpr index_pair swap_sequence[] =
+			static constexpr index_pair comparator_list[] =
 			{
 				{ 1, 2 }, { 3, 4 }, { 5, 6 },
 				{ 0, 2 }, { 3, 5 }, { 4, 6 },
@@ -158,7 +158,7 @@ namespace osn
 		template <>
 		struct network_info<8>
 		{
-			static constexpr index_pair swap_sequence[] =
+			static constexpr index_pair comparator_list[] =
 			{
 				{ 0, 4 }, { 1, 5 }, { 2, 6 }, { 3, 7 },
 				{ 0, 2 }, { 1, 3 }, { 4, 6 }, { 5, 7 },
@@ -181,44 +181,31 @@ namespace osn
 	{
 		static_assert(N <= max_supported_array_size);
 
-		enum : size_t
-		{
-			required_swap_count = detail::array_size(detail::network_info<N>::swap_sequence),
-			depth = detail::network_info<N>::depth
-		};
+		static constexpr size_t required_swap_count = detail::array_size(detail::network_info<N>::comparator_list);
+		static constexpr size_t depth = detail::network_info<N>::depth;
 	};
 
-	template <size_t N, typename RandomAccessIterator>
-	constexpr void sort(RandomAccessIterator begin)
-	{
-		static_assert(
-			detail::is_random_access_iterator<RandomAccessIterator>,
-			"OSN: Only random access iterators are supported.");
+	
 
+	template <size_t N, typename Iterator>
+	constexpr void sort(Iterator begin)
+	{
 		static_assert(
 			N <= max_supported_array_size,
 			"OSN: Invalid array size, only sizes 0 to 8 (inclusive) are supported.");
 
 		if constexpr (N > 1)
 		{
-			using network_info = detail::network_info<N>;
-			using detail::index_pair;
-
-			for (index_pair ip : network_info::swap_sequence)
-			{
-				detail::compare_swap(begin + ip.left, begin + ip.right);
-			}
+			for (auto comparator : detail::network_info<N>::comparator_list)
+				detail::compare_swap(std::next(begin, comparator.left), std::next(begin, comparator.right));
 		}
 	}
 
-	template <bool UseJumpTable = false, typename RandomAccessIterator>
-	constexpr void sort(RandomAccessIterator begin, RandomAccessIterator end)
+	template <bool UseJumpTable = false, typename Iterator>
+	constexpr void sort(Iterator begin, Iterator end)
 	{
-		static_assert(
-			detail::is_random_access_iterator<RandomAccessIterator>,
-			"OSN: Only random access iterators are supported.");
-
 		const auto size = std::distance(begin, end);
+
 		if (size < 2)
 			return;
 
@@ -256,7 +243,7 @@ namespace osn
 		{
 			using function_pointer_type = void(*)(RandomAccessIterator);
 
-			constexpr function_pointer_type jmp[] =
+			constexpr function_pointer_type lookup[] =
 			{
 				sort<2>,
 				sort<3>,
@@ -267,7 +254,7 @@ namespace osn
 				sort<8>
 			};
 
-			return jmp[size - 2](begin);
+			return lookup[size - 2](begin);
 		}
 	}
 }
